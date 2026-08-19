@@ -22,9 +22,13 @@ export const AdminBookingsView: React.FC = () => {
   const handleStatusUpdate = async (id: string, bookingStatus: string) => {
     try {
       const res = await updateBookingStatus(id, { bookingStatus });
-      if (res.success) {
-        toast.success(`Booking ${res.data.bookingId} updated to ${bookingStatus}`);
+      if (res && res.success) {
+        const updatedObj = res.data?.data || res.data || {};
+        const refId = updatedObj.bookingId || id;
+        toast.success(`Booking ${refId} updated to ${bookingStatus}`);
         loadBookings();
+      } else {
+        toast.error(res?.message || 'Failed to update booking status.');
       }
     } catch (err: any) {
       toast.error('Failed to update booking status.');

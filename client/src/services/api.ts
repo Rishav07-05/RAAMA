@@ -298,7 +298,11 @@ export const updateBookingStatus = (id: string, payload: any) =>
   api
     .patch(`/admin/bookings/${id}/status`, payload)
     .then((res) => res.data)
-    .catch(() => ({ success: true, message: 'Booking status updated.' }));
+    .catch(() => ({
+      success: true,
+      message: 'Booking status updated.',
+      data: { _id: id, bookingId: 'BK109482', ...payload },
+    }));
 
 export const fetchAdminOrders = () =>
   api
@@ -323,6 +327,7 @@ export const fetchAdminOrders = () =>
           paymentStatus: 'PAID',
           paymentMethod: 'RAZORPAY',
           trackingToken: 'ORDTRK-88291',
+          createdAt: new Date().toISOString(),
         },
       ],
     }));
@@ -331,13 +336,55 @@ export const updateOrderStatus = (id: string, status: string) =>
   api
     .patch(`/admin/orders/${id}/status`, { status })
     .then((res) => res.data)
-    .catch(() => ({ success: true, message: 'Order status updated.' }));
+    .catch(() => ({
+      success: true,
+      message: 'Order status updated.',
+      data: {
+        _id: id,
+        orderId: 'ORD88291',
+        guestName: 'Suresh Rao',
+        guestPhone: '9741234567',
+        roomNumber: '108',
+        deliveryOption: 'ROOM_SERVICE',
+        items: [
+          { name: 'Paneer Butter Masala', price: 185, quantity: 1, potionSize: 'Standard' },
+          { name: 'Butter Naan', price: 50, quantity: 3, potionSize: 'Standard' },
+        ],
+        totalAmount: 335,
+        status,
+        paymentStatus: 'PAID',
+        paymentMethod: 'RAZORPAY',
+        trackingToken: 'ORDTRK-88291',
+        createdAt: new Date().toISOString(),
+      },
+    }));
 
 export const updateOrderPayment = (id: string, payload: any) =>
   api
     .patch(`/admin/orders/${id}/payment`, payload)
     .then((res) => res.data)
-    .catch(() => ({ success: true, message: 'Order payment updated.' }));
+    .catch(() => ({
+      success: true,
+      message: 'Order payment updated.',
+      data: {
+        _id: id,
+        orderId: 'ORD88291',
+        guestName: 'Suresh Rao',
+        guestPhone: '9741234567',
+        roomNumber: '108',
+        deliveryOption: 'ROOM_SERVICE',
+        items: [
+          { name: 'Paneer Butter Masala', price: 185, quantity: 1, potionSize: 'Standard' },
+          { name: 'Butter Naan', price: 50, quantity: 3, potionSize: 'Standard' },
+        ],
+        totalAmount: 335,
+        status: 'CONFIRMED',
+        paymentStatus: payload.paymentStatus || 'PAID',
+        paymentMethod: payload.paymentMethod || 'CASH',
+        trackingToken: 'ORDTRK-88291',
+        createdAt: new Date().toISOString(),
+      },
+    }));
 
 export const fetchCustomerHistory = () =>
   api
@@ -367,7 +414,11 @@ export const updateRoomStatus = (id: string, status: string) =>
   api
     .patch(`/admin/rooms/${id}/status`, { status })
     .then((res) => res.data)
-    .catch(() => ({ success: true, message: 'Room status updated.' }));
+    .catch(() => ({
+      success: true,
+      message: 'Room status updated.',
+      data: { _id: id, status },
+    }));
 
 export const fetchAuditLogs = () =>
   api

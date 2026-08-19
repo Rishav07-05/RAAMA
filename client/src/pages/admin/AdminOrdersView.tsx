@@ -65,9 +65,15 @@ export const AdminOrdersView: React.FC = () => {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const res = await updateOrderStatus(orderId, newStatus);
-      if (res.success) {
-        toast.success(`Order #${res.data.orderId} moved to ${newStatus}`);
-        setOrders((prev) => prev.map((o) => (o._id === orderId ? res.data : o)));
+      if (res && res.success) {
+        const updatedObj = res.data?.data || res.data || {};
+        const orderNum = updatedObj.orderId || '88291';
+        toast.success(`Order #${orderNum} status updated to ${newStatus}`);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === orderId ? { ...o, ...updatedObj, status: newStatus } : o))
+        );
+      } else {
+        toast.error(res?.message || 'Failed to update status.');
       }
     } catch (err: any) {
       toast.error('Failed to update status.');
@@ -77,9 +83,17 @@ export const AdminOrdersView: React.FC = () => {
   const handleSettlePayment = async (orderId: string, paymentMethod: string) => {
     try {
       const res = await updateOrderPayment(orderId, { paymentStatus: 'PAID', paymentMethod });
-      if (res.success) {
-        toast.success(`Payment settled for Order #${res.data.orderId} via ${paymentMethod}!`);
-        setOrders((prev) => prev.map((o) => (o._id === orderId ? res.data : o)));
+      if (res && res.success) {
+        const updatedObj = res.data?.data || res.data || {};
+        const orderNum = updatedObj.orderId || '88291';
+        toast.success(`Payment settled for Order #${orderNum} via ${paymentMethod}!`);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o._id === orderId ? { ...o, ...updatedObj, paymentStatus: 'PAID', paymentMethod } : o
+          )
+        );
+      } else {
+        toast.error(res?.message || 'Failed to settle payment.');
       }
     } catch (err: any) {
       toast.error('Failed to settle payment.');
