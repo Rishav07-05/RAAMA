@@ -458,6 +458,21 @@ export const QrOrderPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleOrderSubmit} className="space-y-4 pt-2">
+              {/* Auto-Fetched Verified Room Location */}
+              <div className="p-3 bg-[#FFFCE1]/10 rounded-sm border border-[#FFDE74]/30 flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] font-sans uppercase font-bold text-[#FFDE74] tracking-wider block">
+                    Verified Order Location
+                  </span>
+                  <span className="text-sm font-serif font-bold text-[#FFFCE1]">
+                    {isPartyHall ? 'Sambhrama Party Hall' : `Room #${roomInfo?.roomNumber || 'Unknown'} ${roomInfo?.floor ? `(Floor ${roomInfo.floor})` : ''}`}
+                  </span>
+                </div>
+                <span className="px-2 py-1 rounded-sm bg-emerald-500/20 text-emerald-300 text-[9px] font-sans font-bold uppercase tracking-wider border border-emerald-500/30">
+                  ✓ Scanned from QR
+                </span>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-sans uppercase text-[#FFFCE1]/80 font-bold mb-1">Your Name *</label>
                 <input

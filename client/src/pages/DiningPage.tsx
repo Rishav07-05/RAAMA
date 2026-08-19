@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Utensils, GlassWater, Search, ShoppingBag, Plus, Minus, X, Send, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchMenuCatalog, createFoodOrder, verifyOrderPayment } from '../services/api';
 
 export const DiningPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const scannedRoomNumber = searchParams.get('room') || searchParams.get('roomNumber') || '';
+
   const [activeTab, setActiveTab] = useState<'SWAAD_VEG' | 'SWAAD_NON_VEG' | 'LIQUID_LOUNGE'>('SWAAD_VEG');
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
@@ -128,8 +131,8 @@ export const DiningPage: React.FC = () => {
       const res = await createFoodOrder({
         guestName,
         guestPhone,
-        roomNumber: 'Reception / Counter',
-        deliveryOption: 'RECEPTION_PICKUP',
+        roomNumber: scannedRoomNumber ? `Room ${scannedRoomNumber}` : 'Reception / Counter',
+        deliveryOption: scannedRoomNumber ? 'ROOM_SERVICE' : 'RECEPTION_PICKUP',
         items: cartList,
         specialInstructions,
         paymentMethod: paymentMode,
@@ -494,6 +497,22 @@ export const DiningPage: React.FC = () => {
 
             {/* Checkout Form */}
             <form onSubmit={handleOrderSubmit} className="space-y-4 pt-2">
+              {scannedRoomNumber && (
+                <div className="p-3 bg-[#FFFCE1]/10 rounded-sm border border-[#FFDE74]/30 flex items-center justify-between">
+                  <div>
+                    <span className="text-[9px] font-sans uppercase font-bold text-[#FFDE74] tracking-wider block">
+                      Auto-Fetched Verified Location
+                    </span>
+                    <span className="text-sm font-serif font-bold text-[#FFFCE1]">
+                      Room #{scannedRoomNumber}
+                    </span>
+                  </div>
+                  <span className="px-2 py-1 rounded-sm bg-emerald-500/20 text-emerald-300 text-[9px] font-sans font-bold uppercase tracking-wider border border-emerald-500/30">
+                    ✓ Scanned from QR
+                  </span>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-sans uppercase text-[#FFFCE1]/80 font-bold mb-1">Guest Name *</label>
