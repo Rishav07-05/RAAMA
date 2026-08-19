@@ -88,7 +88,7 @@ RAAMA/
 
 ### **Prerequisites**
 - **Node.js**: v18.x or higher
-- **MongoDB**: Local MongoDB instance running at `mongodb://localhost:27017` or MongoDB Atlas URI
+- **MongoDB**: Local MongoDB instance or MongoDB Atlas URI
 
 ### **1. Clone & Install Dependencies**
 
@@ -102,21 +102,21 @@ cd ../client
 npm install
 ```
 
-### **2. Environment Setup**
+### **2. Environment Configuration Setup**
 
 Create a `.env` file in the `server/` directory:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/hotel_raama
-JWT_SECRET=raama_super_secret_jwt_key_2026_production
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
 NODE_ENV=development
 
 # Admin Credentials
-ADMIN_EMAIL=admin@hotelraama.com
-ADMIN_PASSWORD=AdminRaama@2026
+ADMIN_EMAIL=your_admin_email
+ADMIN_PASSWORD=your_admin_password
 
-# Client URL
+# Client Origin
 CLIENT_URL=http://localhost:5173
 ```
 
@@ -124,12 +124,12 @@ Create a `.env` file in the `client/` directory:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
-VITE_RAZORPAY_KEY_ID=rzp_test_TQlI4HYEV7kXzH
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
 ```
 
 ### **3. Database Seeding**
 
-Populate the database with initial room types, 40 unique room QR codes, Sambhrama Party Hall QR code, and Veg/Non-Veg menu items:
+Populate the database with room types, 40 unique room QR codes, Sambhrama Party Hall QR code, and Veg/Non-Veg menu items:
 
 ```bash
 cd server
@@ -154,16 +154,11 @@ Visit the application in your browser at `http://localhost:5173`.
 
 ---
 
-## 🔒 Security & Admin Access
+## 🔒 Security Architecture
 
-- **Admin Login Portal**: `http://localhost:5173/admin/login`
-- **Default Admin Credentials**:
-  - **Email**: `admin@hotelraama.com`
-  - **Password**: `AdminRaama@2026`
-- **Security Features**:
-  - Session tokens are transmitted exclusively via HTTP-Only cookies.
-  - Public routes cannot access admin operations.
-  - Rate limiting protects authentication endpoints against brute-force attacks.
+- **HTTP-Only Cookie Authentication**: Admin sessions use secure JWT tokens stored in HTTP-Only cookies to protect against XSS token extraction.
+- **Route Guarding**: All administrative API endpoints (`/api/admin/*`) require valid authentication middleware.
+- **Rate-Limiting**: Express rate limiters protect authentication endpoints against brute-force attempts.
 
 ---
 
