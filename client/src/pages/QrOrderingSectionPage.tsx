@@ -40,19 +40,19 @@ export const QrOrderingSectionPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#FFFCE1] text-[#0B1849] py-16 px-6 lg:px-8">
+    <div className="space-y-8 text-[#0B1849]">
       <div className="max-w-7xl mx-auto space-y-12">
         
         {/* Title & Banner Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto border-b border-[#0B1849]/15 pb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-[#0B1849]/10 border border-[#0B1849]/20 text-[#0B1849] text-[10px] font-sans font-bold uppercase tracking-widest">
-            <QrCode size={13} /> Contactless Room & Table Ordering
+            <QrCode size={13} /> Admin Console · Room & Hall QR Cards
           </div>
           <h1 className="editorial-section-title text-[#0B1849]">
-            Order at Your Table / Room with QR
+            QR Ordering Directory & Room Cards
           </h1>
           <p className="font-sans text-xs sm:text-sm text-[#596277] leading-relaxed">
-            Select any room or Sambhrama Party Hall to launch contactless dining. Scan or click any assigned QR code to order fresh meals from <strong className="text-[#0B1849]">Swaad (Veg & Non-Veg)</strong> and executive drinks from <strong className="text-[#0B1849]">Liquid Lounge Bar</strong>.
+            Manage static QR codes for Rooms 1 through 40 and Sambhrama Party Hall. Click or scan any card to launch guest ordering for <strong className="text-[#0B1849]">Swaad Pure Veg</strong>, <strong className="text-[#0B1849]">Non-Veg Specialities</strong>, and <strong className="text-[#0B1849]">Liquid Lounge Bar</strong>.
           </p>
         </div>
 

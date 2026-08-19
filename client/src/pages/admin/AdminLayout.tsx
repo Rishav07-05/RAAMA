@@ -10,6 +10,7 @@ import {
   LogOut,
   ShieldCheck,
   Building2,
+  QrCode,
 } from 'lucide-react';
 import { adminLogout } from '../../services/api';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ export const AdminLayout: React.FC = () => {
     { name: 'Kitchen Orders', path: '/admin/orders', icon: UtensilsCrossed },
     { name: 'Room Bookings', path: '/admin/bookings', icon: CalendarCheck },
     { name: 'Rooms & QR Cards', path: '/admin/rooms', icon: BedDouble },
+    { name: 'QR Code Directory', path: '/admin/qr-codes', icon: QrCode },
     { name: 'Customer History', path: '/admin/customers', icon: Users },
     { name: 'Audit Logs', path: '/admin/audit-logs', icon: FileText },
   ];

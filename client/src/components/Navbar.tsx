@@ -15,7 +15,6 @@ export const Navbar: React.FC = () => {
     { name: 'Home', path: '/' },
     { name: 'Rooms & Rates', path: '/rooms' },
     { name: 'Dining & Bar', path: '/dining' },
-    { name: 'Order via QR', path: '/qr-ordering' },
     { name: 'Sambhrama Party Hall', path: '/party-hall' },
     { name: 'Local Sightseeing', path: '/attractions' },
     { name: 'My Bookings & Orders', path: '/my-bookings-orders' },

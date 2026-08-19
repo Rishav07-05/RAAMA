@@ -218,15 +218,15 @@ export const HomePage: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0B1849] via-[#0B1849]/60 to-transparent p-8 flex flex-col justify-end">
                 <div className="flex items-center gap-2 text-[#FFDE74] text-[10px] font-sans font-bold uppercase tracking-wider mb-2">
-                  <Utensils size={14} /> Pure Vegetarian & Non-Veg Delicacies
+                  <Utensils size={14} /> Pure Vegetarian Delicacies
                 </div>
-                <h3 className="text-3xl font-serif text-[#FFFCE1]">Swaad Restaurant</h3>
+                <h3 className="text-3xl font-serif text-[#FFFCE1]">Swaad Pure Veg Restaurant</h3>
                 <p className="text-xs font-sans text-[#FFFCE1]/80 mt-2 leading-relaxed max-w-md">
-                  Crispy Masala Dosas, North Indian Curries, Tandoori Baskets, and traditional Thali meals prepared fresh.
+                  Crispy Masala Dosas, North Indian Curries, Tandoori Baskets, and traditional South & North Indian Thalis.
                 </p>
                 <div className="mt-5">
                   <Link to="/dining" className="inline-flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-wider text-[#FFDE74] hover:text-[#FFFCE1] transition-colors">
-                    Explore Swaad Menu <ArrowUpRight size={14} />
+                    Explore Pure Veg Menu <ArrowUpRight size={14} />
                   </Link>
                 </div>
               </div>
@@ -269,16 +269,16 @@ export const HomePage: React.FC = () => {
               Instant Ordering via QR Code
             </h2>
             <p className="font-sans text-xs sm:text-sm text-[#596277] leading-relaxed">
-              We feature <strong className="text-[#0B1849]">40 unique static QR codes for Rooms 1 through 40</strong> plus <strong className="text-[#0B1849]">1 dedicated QR code for Sambhrama Party Hall</strong>. Scan or open your room's QR code to order Swaad dining and Liquid Lounge drinks straight to your room!
+              We feature <strong className="text-[#0B1849]">40 unique static QR codes for Rooms 1 through 40</strong> plus <strong className="text-[#0B1849]">1 dedicated QR code for Sambhrama Party Hall</strong>. Scan or open your room's QR code to order Swaad Pure Veg meals, Non-Veg delicacies, and Liquid Lounge drinks straight to your room!
             </p>
           </div>
 
           <div className="shrink-0 w-full md:w-auto">
             <Link
-              to="/qr-ordering"
+              to="/dining"
               className="px-8 py-4 rounded-sm bg-[#0B1849] text-[#FFFCE1] font-sans font-semibold text-xs uppercase tracking-wider hover:bg-[#0B1849]/90 transition-all text-center flex items-center justify-center gap-2 shadow-sm"
             >
-              View 41 QR Directory <ArrowRight size={15} />
+              Explore Dining & Bar Menu <ArrowRight size={15} />
             </Link>
           </div>
         </div>

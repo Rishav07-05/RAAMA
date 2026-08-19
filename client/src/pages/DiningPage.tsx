@@ -6,7 +6,7 @@ import { fetchMenuCatalog, createFoodOrder, verifyOrderPayment } from '../servic
 
 export const DiningPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'SWAAD' | 'LIQUID_LOUNGE'>('SWAAD');
+  const [activeTab, setActiveTab] = useState<'SWAAD_VEG' | 'SWAAD_NON_VEG' | 'LIQUID_LOUNGE'>('SWAAD_VEG');
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +31,7 @@ export const DiningPage: React.FC = () => {
   // Swaad has 12 pages, LLB has 2 pages
   const swaadPages = Array.from({ length: 12 }, (_, i) => `/swaad_images/page-${String(i + 1).padStart(2, '0')}.png`);
   const llbPages = Array.from({ length: 2 }, (_, i) => `/llb_beverage_images/page-${i + 1}.png`);
-  const currentScannedPages = activeTab === 'SWAAD' ? swaadPages : llbPages;
+  const currentScannedPages = activeTab !== 'LIQUID_LOUNGE' ? swaadPages : llbPages;
 
   useEffect(() => {
     fetchMenuCatalog()
@@ -49,10 +49,24 @@ export const DiningPage: React.FC = () => {
     document.body.appendChild(script);
   }, []);
 
-  const currentCategories = categories.filter((c) => c.section === activeTab);
-  const currentItems = items.filter(
-    (i) => i.section === activeTab && i.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const currentItems = items.filter((i) => {
+    if (activeTab === 'SWAAD_VEG') {
+      if (i.section !== 'SWAAD' || !i.isVeg) return false;
+    } else if (activeTab === 'SWAAD_NON_VEG') {
+      if (i.section !== 'SWAAD' || i.isVeg) return false;
+    } else if (activeTab === 'LIQUID_LOUNGE') {
+      if (i.section !== 'LIQUID_LOUNGE') return false;
+    }
+    if (searchTerm) {
+      return i.name.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+    return true;
+  });
+
+  const activeCategoryIds = new Set(
+    currentItems.map((i) => (typeof i.categoryId === 'object' ? i.categoryId?._id : i.categoryId))
   );
+  const currentCategories = categories.filter((c) => activeCategoryIds.has(c._id));
 
   const addToCart = (item: any, potionSize: string = 'Standard') => {
     const key = `${item._id}_${potionSize}`;
@@ -262,7 +276,7 @@ export const DiningPage: React.FC = () => {
         </span>
         <h1 className="editorial-section-title text-[#0B1849]">Dining & Beverage Menu</h1>
         <p className="font-sans text-xs sm:text-sm text-[#596277] max-w-xl mx-auto leading-relaxed">
-          Delights from Swaad Restaurant or executive spirits from Liquid Lounge Bar (LLB). Order straight to your room or collect at reception.
+          Delights from Swaad Pure Veg Restaurant, Non-Veg Specialities, or executive spirits from Liquid Lounge Bar (LLB). Order straight to your room or collect at reception.
         </p>
 
         {/* Action Buttons: View Scanned Menu & Cart */}
@@ -288,32 +302,49 @@ export const DiningPage: React.FC = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex justify-center gap-4 mt-8">
+        <div className="flex flex-wrap justify-center gap-3 mt-8">
           <button
             onClick={() => {
-              setActiveTab('SWAAD');
+              setActiveTab('SWAAD_VEG');
               setSearchTerm('');
             }}
-            className={`px-6 py-3.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'SWAAD'
-                ? 'bg-[#0B1849] text-[#FFFCE1]'
+            className={`px-5 py-3 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'SWAAD_VEG'
+                ? 'bg-[#0B1849] text-[#FFFCE1] shadow-md'
                 : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
             }`}
           >
-            <Utensils size={16} /> Swaad Restaurant
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <Utensils size={15} /> Swaad Pure Veg
           </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('SWAAD_NON_VEG');
+              setSearchTerm('');
+            }}
+            className={`px-5 py-3 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'SWAAD_NON_VEG'
+                ? 'bg-[#0B1849] text-[#FFFCE1] shadow-md'
+                : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+            <Utensils size={15} /> Non-Veg Specialities
+          </button>
+
           <button
             onClick={() => {
               setActiveTab('LIQUID_LOUNGE');
               setSearchTerm('');
             }}
-            className={`px-6 py-3.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-5 py-3 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'LIQUID_LOUNGE'
-                ? 'bg-[#0B1849] text-[#FFFCE1]'
+                ? 'bg-[#0B1849] text-[#FFFCE1] shadow-md'
                 : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
             }`}
           >
-            <GlassWater size={16} /> Liquid Lounge Bar
+            <GlassWater size={15} /> Liquid Lounge Bar
           </button>
         </div>
 
@@ -322,7 +353,7 @@ export const DiningPage: React.FC = () => {
           <Search size={16} className="absolute left-3.5 top-3 text-[#596277]" />
           <input
             type="text"
-            placeholder={`Search ${activeTab === 'SWAAD' ? 'dishes...' : 'drinks...'}`}
+            placeholder={`Search ${activeTab === 'LIQUID_LOUNGE' ? 'drinks...' : 'dishes...'}`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[#FFFCE1] border border-[#0B1849]/20 rounded-sm pl-10 pr-4 py-2 text-xs font-sans text-[#0B1849] focus:border-[#0B1849] focus:outline-none"
@@ -619,7 +650,7 @@ export const DiningPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
           <div className="w-full max-w-4xl flex justify-between items-center mb-4 text-[#FFFCE1]">
             <span className="text-xs font-sans uppercase tracking-widest text-[#FFDE74] font-bold">
-              {activeTab === 'SWAAD' ? 'Swaad Menu Card' : 'Liquid Lounge Bar Menu'} (Page {viewerPageIndex + 1} of {currentScannedPages.length})
+              {activeTab !== 'LIQUID_LOUNGE' ? 'Swaad Menu Card' : 'Liquid Lounge Bar Menu'} (Page {viewerPageIndex + 1} of {currentScannedPages.length})
             </span>
             <button
               onClick={() => setViewerOpen(false)}

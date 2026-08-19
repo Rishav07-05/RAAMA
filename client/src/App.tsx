@@ -50,9 +50,7 @@ export const App: React.FC = () => {
             <Route path="/location" element={<LocationPage />} />
             <Route path="/my-bookings-orders" element={<MyBookingsOrdersPage />} />
 
-            {/* Room QR Ordering Routes */}
-            <Route path="/qr-ordering" element={<QrOrderingSectionPage />} />
-            <Route path="/qr-codes" element={<QrOrderingSectionPage />} />
+            {/* Room QR Scan & Tracking Routes for Guests */}
             <Route path="/order/:token" element={<QrOrderPage />} />
             <Route path="/track-order/:token" element={<OrderTrackingPage />} />
 
@@ -72,6 +70,7 @@ export const App: React.FC = () => {
               <Route path="orders" element={<AdminOrdersView />} />
               <Route path="bookings" element={<AdminBookingsView />} />
               <Route path="rooms" element={<AdminRoomsView />} />
+              <Route path="qr-codes" element={<QrOrderingSectionPage />} />
               <Route path="customers" element={<AdminCustomerHistoryView />} />
               <Route path="audit-logs" element={<AdminAuditLogsView />} />
             </Route>

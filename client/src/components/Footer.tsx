@@ -36,7 +36,8 @@ export const Footer: React.FC = () => {
           <ul className="space-y-2.5 text-xs font-sans text-[#FFFCE1]/80">
             <li><Link to="/" className="hover:text-[#FFDE74] transition-colors">Home Portal</Link></li>
             <li><Link to="/rooms" className="hover:text-[#FFDE74] transition-colors">Room Tariffs & Booking</Link></li>
-            <li><Link to="/dining" className="hover:text-[#FFDE74] transition-colors">Swaad Veg Restaurant</Link></li>
+            <li><Link to="/dining" className="hover:text-[#FFDE74] transition-colors">Swaad Pure Veg Restaurant</Link></li>
+            <li><Link to="/dining" className="hover:text-[#FFDE74] transition-colors">Non-Veg Specialities</Link></li>
             <li><Link to="/dining" className="hover:text-[#FFDE74] transition-colors">Liquid Lounge Bar (LLB)</Link></li>
             <li><Link to="/party-hall" className="hover:text-[#FFDE74] transition-colors">Sambhrama Party Hall</Link></li>
             <li><Link to="/attractions" className="hover:text-[#FFDE74] transition-colors">Hassan Sights & Belur</Link></li>

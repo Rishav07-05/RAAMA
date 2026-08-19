@@ -12,8 +12,8 @@ export const QrOrderPage: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'SWAAD' | 'LIQUID_LOUNGE'>('SWAAD');
-  
+  const [activeSection, setActiveSection] = useState<'SWAAD_VEG' | 'SWAAD_NON_VEG' | 'LIQUID_LOUNGE'>('SWAAD_VEG');
+
   // Cart State: { [menuItemId_potionSize]: { menuItemId, name, price, quantity, potionSize } }
   const [cart, setCart] = useState<Record<string, any>>({});
   const [cartOpen, setCartOpen] = useState(false);
@@ -246,8 +246,22 @@ export const QrOrderPage: React.FC = () => {
   }
 
   const isPartyHall = roomInfo.roomNumber.toLowerCase().includes('hall');
-  const sectionCategories = categories.filter((c) => c.section === activeSection);
-  const sectionItems = items.filter((i) => i.section === activeSection);
+
+  const sectionItems = items.filter((i) => {
+    if (activeSection === 'SWAAD_VEG') {
+      return i.section === 'SWAAD' && i.isVeg === true;
+    } else if (activeSection === 'SWAAD_NON_VEG') {
+      return i.section === 'SWAAD' && i.isVeg === false;
+    } else if (activeSection === 'LIQUID_LOUNGE') {
+      return i.section === 'LIQUID_LOUNGE';
+    }
+    return true;
+  });
+
+  const activeCategoryIds = new Set(
+    sectionItems.map((i) => (typeof i.categoryId === 'object' ? i.categoryId?._id : i.categoryId))
+  );
+  const sectionCategories = categories.filter((c) => activeCategoryIds.has(c._id));
 
   return (
     <div className="min-h-screen bg-[#FFFCE1] text-[#0B1849] py-12 px-6 lg:px-8 relative">
@@ -264,26 +278,38 @@ export const QrOrderPage: React.FC = () => {
         </p>
 
         {/* Section Tabs */}
-        <div className="flex justify-center gap-3 pt-6">
+        <div className="flex flex-wrap justify-center gap-3 pt-6">
           <button
-            onClick={() => setActiveSection('SWAAD')}
-            className={`px-5 py-2.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
-              activeSection === 'SWAAD'
+            onClick={() => setActiveSection('SWAAD_VEG')}
+            className={`px-4 py-2.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+              activeSection === 'SWAAD_VEG'
                 ? 'bg-[#0B1849] text-[#FFFCE1]'
                 : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
             }`}
           >
-            <Utensils size={15} /> Swaad Menu
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <Utensils size={14} /> Swaad Pure Veg
+          </button>
+          <button
+            onClick={() => setActiveSection('SWAAD_NON_VEG')}
+            className={`px-4 py-2.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+              activeSection === 'SWAAD_NON_VEG'
+                ? 'bg-[#0B1849] text-[#FFFCE1]'
+                : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+            <Utensils size={14} /> Non-Veg Specialities
           </button>
           <button
             onClick={() => setActiveSection('LIQUID_LOUNGE')}
-            className={`px-5 py-2.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-4 py-2.5 rounded-sm font-sans font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
               activeSection === 'LIQUID_LOUNGE'
                 ? 'bg-[#0B1849] text-[#FFFCE1]'
                 : 'bg-[#FFFCE1] text-[#0B1849] border border-[#0B1849]/20 hover:border-[#0B1849]'
             }`}
           >
-            <GlassWater size={15} /> Liquid Lounge Bar
+            <GlassWater size={14} /> Liquid Lounge Bar
           </button>
         </div>
       </div>
