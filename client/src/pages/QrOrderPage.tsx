@@ -31,6 +31,14 @@ export const QrOrderPage: React.FC = () => {
       .then((res) => {
         if (res.success) {
           setRoomInfo(res.data);
+          try {
+            localStorage.setItem('scanned_qr_token', token);
+            if (res.data?.roomNumber) {
+              localStorage.setItem('scanned_room_number', String(res.data.roomNumber));
+            }
+          } catch (e) {
+            console.error('Error writing QR session to localStorage:', e);
+          }
           // 2. Fetch Menu
           return fetchMenuCatalog();
         } else {

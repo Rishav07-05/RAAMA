@@ -7,7 +7,13 @@ import { fetchMenuCatalog, createFoodOrder, verifyOrderPayment } from '../servic
 export const DiningPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const scannedRoomNumber = searchParams.get('room') || searchParams.get('roomNumber') || '';
+  const urlRoom = searchParams.get('room') || searchParams.get('roomNumber');
+  const urlToken = searchParams.get('token');
+  const storedRoom = localStorage.getItem('scanned_room_number');
+  const storedToken = localStorage.getItem('scanned_qr_token');
+
+  const isQrScanned = Boolean(urlRoom || urlToken || storedRoom || storedToken);
+  const activeRoomNumber = urlRoom || storedRoom || '';
 
   const [activeTab, setActiveTab] = useState<'SWAAD_VEG' | 'SWAAD_NON_VEG' | 'LIQUID_LOUNGE'>('SWAAD_VEG');
   const [categories, setCategories] = useState<any[]>([]);
@@ -34,6 +40,9 @@ export const DiningPage: React.FC = () => {
   const currentScannedPages = activeTab !== 'LIQUID_LOUNGE' ? swaadPages : llbPages;
 
   useEffect(() => {
+    if (urlRoom) localStorage.setItem('scanned_room_number', urlRoom);
+    if (urlToken) localStorage.setItem('scanned_qr_token', urlToken);
+
     fetchMenuCatalog()
       .then((res) => {
         if (res.success) {
@@ -47,7 +56,7 @@ export const DiningPage: React.FC = () => {
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
-  }, []);
+  }, [urlRoom, urlToken]);
 
   const currentItems = items.filter((i) => {
     if (activeTab === 'SWAAD_VEG') {
@@ -69,6 +78,11 @@ export const DiningPage: React.FC = () => {
   const currentCategories = categories.filter((c) => activeCategoryIds.has(c._id));
 
   const addToCart = (item: any, potionSize: string = 'Standard') => {
+    if (!isQrScanned) {
+      toast.error('You must scan the room QR code to place an order.');
+      return;
+    }
+
     const key = `${item._id}_${potionSize}`;
     const unitPrice = potionSize === '60ML' && item.price60ml ? item.price60ml : item.price;
 
@@ -114,6 +128,11 @@ export const DiningPage: React.FC = () => {
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isQrScanned) {
+      toast.error('You must scan the room QR code to place an order.');
+      return;
+    }
+
     if (cartList.length === 0) {
       toast.error('Your cart is empty.');
       return;
@@ -131,8 +150,8 @@ export const DiningPage: React.FC = () => {
       const res = await createFoodOrder({
         guestName,
         guestPhone,
-        roomNumber: scannedRoomNumber ? `Room ${scannedRoomNumber}` : 'Reception / Counter',
-        deliveryOption: scannedRoomNumber ? 'ROOM_SERVICE' : 'RECEPTION_PICKUP',
+        roomNumber: activeRoomNumber ? `Room ${activeRoomNumber}` : 'QR Order',
+        deliveryOption: 'ROOM_SERVICE',
         items: cartList,
         specialInstructions,
         paymentMethod: paymentMode,
@@ -261,6 +280,15 @@ export const DiningPage: React.FC = () => {
         <p className="font-sans text-xs sm:text-sm text-[#596277] max-w-xl mx-auto leading-relaxed">
           Delights from Swaad Pure Veg Restaurant, Non-Veg Specialities, or executive spirits from Liquid Lounge Bar (LLB). Order straight to your room or collect at reception.
         </p>
+
+        {!isQrScanned && (
+          <div className="bg-[#0B1849] text-[#FFFCE1] p-3.5 rounded-sm border border-[#FFDE74]/30 shadow-md text-xs font-sans flex items-center justify-center gap-2.5 max-w-xl mx-auto">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span>
+              <strong className="text-[#FFDE74] uppercase tracking-wider">QR Scan Required:</strong> Please scan the QR code in your room or table to enable food & beverage ordering.
+            </span>
+          </div>
+        )}
 
         {/* Action Buttons: View Scanned Menu & Cart */}
         <div className="flex flex-wrap justify-center gap-4 pt-4">
@@ -497,14 +525,14 @@ export const DiningPage: React.FC = () => {
 
             {/* Checkout Form */}
             <form onSubmit={handleOrderSubmit} className="space-y-4 pt-2">
-              {scannedRoomNumber && (
+              {activeRoomNumber && (
                 <div className="p-3 bg-[#FFFCE1]/10 rounded-sm border border-[#FFDE74]/30 flex items-center justify-between">
                   <div>
                     <span className="text-[9px] font-sans uppercase font-bold text-[#FFDE74] tracking-wider block">
                       Auto-Fetched Verified Location
                     </span>
                     <span className="text-sm font-serif font-bold text-[#FFFCE1]">
-                      Room #{scannedRoomNumber}
+                      Room #{activeRoomNumber}
                     </span>
                   </div>
                   <span className="px-2 py-1 rounded-sm bg-emerald-500/20 text-emerald-300 text-[9px] font-sans font-bold uppercase tracking-wider border border-emerald-500/30">
