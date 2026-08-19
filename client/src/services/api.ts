@@ -21,6 +21,14 @@ export const api = axios.create({
   timeout: 5000,
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // --- GUEST APIS WITH AUTOMATIC STATIC FALLBACKS ---
 
 export const fetchRoomTypes = () =>
@@ -203,29 +211,57 @@ export const getOrderInvoiceUrl = (idOrToken: string) => `${API_BASE_URL}/billin
 export const adminLogin = (credentials: any) =>
   api
     .post('/admin/login', credentials)
-    .then((res) => res.data)
-    .catch(() => {
+    .then((res) => {
+      if (res.data?.success) {
+        const token = res.data.token || res.data.data?.token || 'raama_admin_token';
+        localStorage.setItem('admin_token', token);
+      }
+      return res.data;
+    })
+    .catch((err) => {
+      // Fallback environment verification if API server is offline/mocking
+      const inputEmail = credentials?.email?.toLowerCase()?.trim();
+      const inputPass = credentials?.password;
+      const targetEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@hotelraama.com').toLowerCase().trim();
+      const targetPass = import.meta.env.VITE_ADMIN_PASSWORD || 'AdminRaama@2026';
+
+      if (inputEmail === targetEmail && inputPass === targetPass) {
+        const token = 'raama_admin_authenticated_token';
+        localStorage.setItem('admin_token', token);
+        return {
+          success: true,
+          token,
+          data: { token, admin: { email: targetEmail, name: 'Hotel Raama Admin', role: 'ADMIN' } },
+        };
+      }
       return {
-        success: true,
-        token: 'mock_admin_jwt_token',
-        admin: { email: credentials.email || 'admin@hotelraama.com', name: 'Hotel Raama Admin', role: 'ADMIN' },
+        success: false,
+        message: err.response?.data?.message || 'Invalid admin credentials.',
       };
     });
 
-export const adminLogout = () =>
-  api
+export const adminLogout = () => {
+  localStorage.removeItem('admin_token');
+  return api
     .post('/admin/logout')
     .then((res) => res.data)
     .catch(() => ({ success: true, message: 'Logged out successfully' }));
+};
 
-export const fetchAdminMe = () =>
-  api
+export const fetchAdminMe = () => {
+  const token = localStorage.getItem('admin_token');
+  if (!token) {
+    return Promise.resolve({ success: false, message: 'Unauthenticated' });
+  }
+
+  return api
     .get('/admin/me')
     .then((res) => res.data)
     .catch(() => ({
       success: true,
       data: { email: 'admin@hotelraama.com', name: 'Hotel Raama Admin', role: 'ADMIN' },
     }));
+};
 
 export const fetchDashboardMetrics = () =>
   api
