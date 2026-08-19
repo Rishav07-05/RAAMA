@@ -81,27 +81,39 @@ export class QrController {
       let finalDeliveryOption = deliveryOption || 'ROOM_SERVICE';
 
       if (qrToken) {
-        // Direct QR ordering
+        // Direct QR ordering via token
         const room = await Room.findOne({ qrToken, isActive: true });
-        if (!room) {
-          return res.status(404).json({ success: false, message: 'Invalid or inactive room QR code.' });
+        if (room) {
+          finalRoomNumber = room.roomNumber;
+          roomId = room._id;
+          finalQrToken = qrToken;
+          finalDeliveryOption = 'ROOM_SERVICE';
+        } else {
+          finalRoomNumber = 'QR Order';
+          finalDeliveryOption = 'ROOM_SERVICE';
         }
-        finalRoomNumber = room.roomNumber;
-        roomId = room._id;
-        finalQrToken = qrToken;
-        finalDeliveryOption = 'ROOM_SERVICE';
       } else if (roomNumber && roomNumber.toLowerCase() !== 'none') {
-        // Dining portal ordering with a room number
-        const room = await Room.findOne({ roomNumber: roomNumber.trim(), isActive: true });
-        if (!room) {
-          return res.status(404).json({ success: false, message: `Room ${roomNumber} not found or is currently inactive.` });
+        // Dining portal ordering with room number (strip "Room " or "Room #" if present)
+        const cleanNum = roomNumber.replace(/^Room\s*#?/i, '').trim();
+        const room = await Room.findOne({
+          $or: [
+            { roomNumber: cleanNum },
+            { roomNumber: roomNumber.trim() }
+          ],
+          isActive: true
+        });
+        if (room) {
+          finalRoomNumber = room.roomNumber;
+          roomId = room._id;
+          finalQrToken = room.qrToken;
+          finalDeliveryOption = 'ROOM_SERVICE';
+        } else {
+          finalRoomNumber = roomNumber.trim();
+          finalDeliveryOption = 'ROOM_SERVICE';
         }
-        finalRoomNumber = room.roomNumber;
-        roomId = room._id;
-        finalQrToken = room.qrToken;
       } else {
         // No room number provided (None)
-        finalRoomNumber = 'None';
+        finalRoomNumber = 'Reception / Counter';
         finalDeliveryOption = 'RECEPTION_PICKUP';
       }
 

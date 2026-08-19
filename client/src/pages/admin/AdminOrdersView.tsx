@@ -4,7 +4,13 @@ import { Volume2, VolumeX, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchAdminOrders, updateOrderStatus, updateOrderPayment, getOrderInvoiceUrl } from '../../services/api';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+const getSocketUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    return envUrl.replace(/\/api\/?$/, '');
+  }
+  return window.location.origin.includes('5173') ? 'http://localhost:5000' : window.location.origin;
+};
 
 export const AdminOrdersView: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -39,15 +45,16 @@ export const AdminOrdersView: React.FC = () => {
   useEffect(() => {
     loadOrders();
 
-    const socket = io(SOCKET_URL, { withCredentials: true });
+    const socket = io(getSocketUrl(), { withCredentials: true });
 
     socket.on('connect', () => {
       socket.emit('join_admin_room');
     });
 
     socket.on('new_order', (newOrder: any) => {
-      const isPickup = newOrder.roomNumber && newOrder.roomNumber.toLowerCase() === 'none';
-      const labelText = isPickup ? 'Reception Pickup' : `Room #${newOrder.roomNumber}`;
+      const roomStr = newOrder.roomNumber || '';
+      const isPickup = !roomStr || roomStr.toLowerCase() === 'none' || roomStr.toLowerCase().includes('reception');
+      const labelText = isPickup ? 'Reception Pickup' : `Room #${roomStr}`;
       toast.success(`NEW ORDER! ${labelText} - Order #${newOrder.orderId}`);
       if (soundEnabled) playNotificationSound();
       setOrders((prev) => [newOrder, ...prev.filter((o) => o._id !== newOrder._id)]);
