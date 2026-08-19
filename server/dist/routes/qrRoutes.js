@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const qrController_1 = require("../controllers/qrController");
+const router = (0, express_1.Router)();
+router.get('/qr/all-codes', qrController_1.QrController.getAllQrCodes);
+router.get('/qr/validate/:token', qrController_1.QrController.validateToken);
+router.post('/orders', qrController_1.QrController.createOrder);
+router.post('/orders/verify-payment', qrController_1.QrController.verifyPayment);
+router.get('/orders/track/:token', qrController_1.QrController.trackOrder);
+exports.default = router;

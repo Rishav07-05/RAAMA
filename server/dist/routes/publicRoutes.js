@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const publicController_1 = require("../controllers/publicController");
+const rateLimiter_1 = require("../middleware/rateLimiter");
+const router = (0, express_1.Router)();
+router.get('/rooms', publicController_1.PublicController.getRoomTypes);
+router.post('/availability/check', publicController_1.PublicController.checkAvailabilityAndPrice);
+router.post('/bookings', rateLimiter_1.bookingLimiter, publicController_1.PublicController.createBooking);
+router.post('/bookings/verify-payment', publicController_1.PublicController.verifyPayment);
+router.get('/bookings/track/:token', publicController_1.PublicController.trackBooking);
+router.get('/menu', publicController_1.PublicController.getMenu);
+router.get('/party-packages', publicController_1.PublicController.getPartyPackages);
+router.get('/attractions', publicController_1.PublicController.getAttractions);
+router.get('/hotel-info', publicController_1.PublicController.getHotelInfo);
+router.get('/billing/invoice/booking/:idOrToken', publicController_1.PublicController.downloadBookingInvoicePdf);
+router.get('/billing/invoice/order/:idOrToken', publicController_1.PublicController.downloadOrderInvoicePdf);
+exports.default = router;

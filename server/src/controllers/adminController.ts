@@ -1,0 +1,417 @@
+import { Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { AuthRequest } from '../middleware/authMiddleware';
+import { Admin } from '../models/Admin';
+import { Booking } from '../models/Booking';
+import { Order } from '../models/Order';
+import { Room } from '../models/Room';
+import { RoomType } from '../models/RoomType';
+import { MenuItem } from '../models/MenuItem';
+import { MenuCategory } from '../models/MenuCategory';
+import { Coupon } from '../models/Coupon';
+import { MealPlan } from '../models/MealPlan';
+import { AuditLog } from '../models/AuditLog';
+import { HotelSetting } from '../models/HotelSetting';
+import { SocketService } from '../services/SocketService';
+import { InvoicePdfService } from '../services/InvoicePdfService';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'raama_super_secret_jwt_key_2026_production';
+
+export class AdminController {
+  /**
+   * POST /api/admin/login
+   */
+  static async login(req: AuthRequest, res: Response) {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required.' });
+      }
+
+      const inputEmail = email.toLowerCase().trim();
+      const envEmail = (process.env.ADMIN_EMAIL || 'admin@hotelraama.com').toLowerCase().trim();
+      const envPass = process.env.ADMIN_PASSWORD || 'AdminRaama@2026';
+
+      let admin = await Admin.findOne({ email: inputEmail });
+
+      // Check if credentials match env credentials
+      const isEnvMatch = (inputEmail === envEmail && password === envPass);
+
+      if (isEnvMatch) {
+        if (!admin) {
+          const passwordHash = await bcrypt.hash(envPass, 10);
+          admin = await Admin.create({
+            email: envEmail,
+            passwordHash,
+            name: 'Hotel Raama Admin',
+            role: 'ADMIN',
+          });
+        }
+      } else {
+        if (!admin) {
+          return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, admin.passwordHash);
+        if (!isMatch) {
+          return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+        }
+      }
+
+      admin.lastLogin = new Date();
+      await admin.save();
+
+      const token = jwt.sign(
+        { id: admin._id, email: admin.email, role: admin.role },
+        JWT_SECRET,
+        { expiresIn: '12h' }
+      );
+
+      // Set HTTP-only Cookie
+      res.cookie('jwt_admin', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 12 * 60 * 60 * 1000, // 12 hours
+      });
+
+      // Audit Log
+      await AuditLog.create({
+        adminId: admin._id,
+        adminEmail: admin.email,
+        action: 'ADMIN_LOGIN',
+        entity: 'Admin',
+        entityId: admin._id.toString(),
+        details: { ip: req.ip },
+      });
+
+      return res.json({
+        success: true,
+        message: 'Login successful.',
+        data: {
+          token,
+          admin: {
+            id: admin._id,
+            email: admin.email,
+            name: admin.name,
+            role: admin.role,
+          },
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Server error during login.' });
+    }
+  }
+
+  /**
+   * POST /api/admin/logout
+   */
+  static async logout(req: AuthRequest, res: Response) {
+    res.clearCookie('jwt_admin');
+    return res.json({ success: true, message: 'Logged out successfully.' });
+  }
+
+  /**
+   * GET /api/admin/me
+   */
+  static async getMe(req: AuthRequest, res: Response) {
+    return res.json({ success: true, data: req.admin });
+  }
+
+  /**
+   * GET /api/admin/dashboard
+   */
+  static async getDashboardMetrics(req: AuthRequest, res: Response) {
+    try {
+      const totalRooms = await Room.countDocuments({ isActive: true });
+      const occupiedRooms = await Room.countDocuments({ status: 'OCCUPIED' });
+      const reservedRooms = await Room.countDocuments({ status: 'RESERVED' });
+      
+      const occupancyRate = totalRooms > 0 ? Math.round(((occupiedRooms + reservedRooms) / totalRooms) * 100) : 0;
+
+      const pendingOrdersCount = await Order.countDocuments({ status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] } });
+      const totalConfirmedBookings = await Booking.countDocuments({ bookingStatus: { $in: ['CONFIRMED', 'CHECKED_IN'] } });
+
+      // Calculate Total Revenue
+      const paidBookings = await Booking.find({ paymentStatus: 'PAID' });
+      const totalBookingRevenue = paidBookings.reduce((sum, b) => sum + b.totalAmount, 0);
+
+      const paidOrders = await Order.find({ paymentStatus: 'PAID' });
+      const totalOrderRevenue = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+
+      // Monthly Revenue Chart Data
+      const monthlyRevenueMap: Record<string, number> = {};
+      paidBookings.forEach(b => {
+        const monthKey = new Date(b.createdAt).toLocaleString('default', { month: 'short' });
+        monthlyRevenueMap[monthKey] = (monthlyRevenueMap[monthKey] || 0) + b.totalAmount;
+      });
+
+      const revenueChart = Object.keys(monthlyRevenueMap).map(m => ({
+        month: m,
+        revenue: monthlyRevenueMap[m],
+      }));
+
+      return res.json({
+        success: true,
+        data: {
+          totalRooms,
+          occupiedRooms,
+          reservedRooms,
+          availableRooms: Math.max(0, totalRooms - occupiedRooms - reservedRooms),
+          occupancyRate,
+          pendingOrdersCount,
+          totalConfirmedBookings,
+          totalBookingRevenue,
+          totalOrderRevenue,
+          totalCombinedRevenue: totalBookingRevenue + totalOrderRevenue,
+          revenueChart,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch dashboard metrics.' });
+    }
+  }
+
+  /**
+   * GET /api/admin/bookings
+   */
+  static async getBookings(req: AuthRequest, res: Response) {
+    try {
+      const bookings = await Booking.find().populate('roomTypeId assignedRoomId').sort({ createdAt: -1 });
+      return res.json({ success: true, data: bookings });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch bookings.' });
+    }
+  }
+
+  /**
+   * PATCH /api/admin/bookings/:id/status
+   */
+  static async updateBookingStatus(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { bookingStatus, paymentStatus, assignedRoomId } = req.body;
+
+      const booking = await Booking.findById(id);
+      if (!booking) {
+        return res.status(404).json({ success: false, message: 'Booking not found.' });
+      }
+
+      if (bookingStatus) booking.bookingStatus = bookingStatus;
+      if (paymentStatus) booking.paymentStatus = paymentStatus;
+      if (assignedRoomId) booking.assignedRoomId = assignedRoomId;
+
+      await booking.save();
+
+      // Sync Room status if assigned
+      if (booking.assignedRoomId) {
+        if (booking.bookingStatus === 'CHECKED_IN') {
+          await Room.findByIdAndUpdate(booking.assignedRoomId, { status: 'OCCUPIED' });
+        } else if (booking.bookingStatus === 'CHECKED_OUT') {
+          await Room.findByIdAndUpdate(booking.assignedRoomId, { status: 'CLEANING' });
+        } else if (booking.bookingStatus === 'CANCELLED') {
+          await Room.findByIdAndUpdate(booking.assignedRoomId, { status: 'AVAILABLE' });
+        }
+      }
+
+      await AuditLog.create({
+        adminId: req.admin!.id,
+        adminEmail: req.admin!.email,
+        action: 'UPDATE_BOOKING_STATUS',
+        entity: 'Booking',
+        entityId: booking._id.toString(),
+        details: { bookingId: booking.bookingId, bookingStatus, paymentStatus },
+      });
+
+      return res.json({ success: true, data: booking });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to update booking status.' });
+    }
+  }
+
+  /**
+   * GET /api/admin/orders
+   */
+  static async getOrders(req: AuthRequest, res: Response) {
+    try {
+      const orders = await Order.find().sort({ createdAt: -1 });
+      return res.json({ success: true, data: orders });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch orders.' });
+    }
+  }
+
+  /**
+   * PATCH /api/admin/orders/:id/status
+   */
+  static async updateOrderStatus(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found.' });
+      }
+
+      order.status = status;
+      await order.save();
+
+      SocketService.emitOrderStatusUpdate(order.trackingToken, order);
+
+      await AuditLog.create({
+        adminId: req.admin!.id,
+        adminEmail: req.admin!.email,
+        action: 'UPDATE_ORDER_STATUS',
+        entity: 'Order',
+        entityId: order._id.toString(),
+        details: { orderId: order.orderId, newStatus: status },
+      });
+
+      return res.json({ success: true, data: order });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to update order status.' });
+    }
+  }
+
+  /**
+   * PATCH /api/admin/orders/:id/payment
+   */
+  static async updateOrderPayment(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { paymentStatus, paymentMethod } = req.body;
+
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found.' });
+      }
+
+      order.paymentStatus = paymentStatus;
+      if (paymentMethod) order.paymentMethod = paymentMethod;
+      await order.save();
+
+      await AuditLog.create({
+        adminId: req.admin!.id,
+        adminEmail: req.admin!.email,
+        action: 'SETTLE_ORDER_PAYMENT',
+        entity: 'Order',
+        entityId: order._id.toString(),
+        details: { orderId: order.orderId, paymentStatus, paymentMethod },
+      });
+
+      return res.json({ success: true, data: order });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to update order payment.' });
+    }
+  }
+
+  /**
+   * GET /api/admin/reports/customer-history
+   * "Customer Last Ordered" table & spend history
+   */
+  static async getCustomerHistory(req: AuthRequest, res: Response) {
+    try {
+      const orders = await Order.find().sort({ createdAt: -1 });
+      const customerMap = new Map<string, any>();
+
+      orders.forEach(order => {
+        const phone = order.guestPhone.trim();
+        if (!customerMap.has(phone)) {
+          customerMap.set(phone, {
+            guestName: order.guestName,
+            guestPhone: phone,
+            totalOrders: 0,
+            totalSpent: 0,
+            lastOrderDate: order.createdAt,
+            lastOrderRoom: order.roomNumber,
+            lastOrderId: order.orderId,
+          });
+        }
+        const cust = customerMap.get(phone);
+        cust.totalOrders += 1;
+        if (order.paymentStatus === 'PAID') {
+          cust.totalSpent += order.totalAmount;
+        }
+      });
+
+      const customerHistory = Array.from(customerMap.values());
+      return res.json({ success: true, data: customerHistory });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch customer history.' });
+    }
+  }
+
+  /**
+   * GET /api/admin/billing/invoice/:type/:id
+   */
+  static async downloadInvoicePdf(req: AuthRequest, res: Response) {
+    try {
+      const { type, id } = req.params;
+
+      if (type === 'booking') {
+        const booking = await Booking.findById(id).populate('roomTypeId');
+        if (!booking) return res.status(404).send('Booking not found');
+
+        const roomTypeName = (booking.roomTypeId as any)?.name || 'Executive Room';
+        const pdfBuffer = await InvoicePdfService.generateBookingInvoicePdf(booking, roomTypeName);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Invoice-${booking.bookingId}.pdf`);
+        return res.send(pdfBuffer);
+      } else if (type === 'order') {
+        const order = await Order.findById(id);
+        if (!order) return res.status(404).send('Order not found');
+
+        const pdfBuffer = await InvoicePdfService.generateOrderInvoicePdf(order);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Invoice-${order.orderId}.pdf`);
+        return res.send(pdfBuffer);
+      } else {
+        return res.status(400).send('Invalid invoice type');
+      }
+    } catch (error) {
+      return res.status(500).send('Failed to generate PDF');
+    }
+  }
+
+  /**
+   * GET /api/admin/rooms
+   */
+  static async getRooms(req: AuthRequest, res: Response) {
+    try {
+      const rooms = await Room.find().populate('roomTypeId');
+      return res.json({ success: true, data: rooms });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch rooms.' });
+    }
+  }
+
+  /**
+   * PATCH /api/admin/rooms/:id/status
+   */
+  static async updateRoomStatus(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const room = await Room.findByIdAndUpdate(id, { status }, { new: true });
+      return res.json({ success: true, data: room });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to update room.' });
+    }
+  }
+
+  /**
+   * GET /api/admin/audit-logs
+   */
+  static async getAuditLogs(req: AuthRequest, res: Response) {
+    try {
+      const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100);
+      return res.json({ success: true, data: logs });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch audit logs.' });
+    }
+  }
+}

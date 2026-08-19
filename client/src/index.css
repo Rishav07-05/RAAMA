@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Manrope:wght@200..800&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-cream: #FFFCE1;
+    --color-navy: #0B1849;
+    --color-gold: #FFDE74;
+    --color-muted: #596277;
+    
+    --bg-primary: #FFFCE1;
+    --bg-surface: #FFFCE1;
+    --bg-card: #FFFCE1;
+    --text-primary: #0B1849;
+    --text-secondary: #596277;
+    --border-color: rgba(11, 24, 73, 0.15);
+    --gold-accent: #FFDE74;
+    --navy-header: #0B1849;
+  }
+
+  .dark {
+    --bg-primary: #0B1849;
+    --bg-surface: #0B1849;
+    --bg-card: #0B1849;
+    --text-primary: #FFFCE1;
+    --text-secondary: #A3B1C6;
+    --border-color: rgba(255, 252, 225, 0.15);
+    --gold-accent: #FFDE74;
+    --navy-header: #0B1849;
+  }
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Manrope', sans-serif;
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-serif, .font-serif-luxury, .font-display, .font-anton {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+}
+
+/* Editorial Animations & Utilities */
+.editorial-hero-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(3rem, 7.5vw, 7.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+
+.editorial-section-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.25rem, 5vw, 5rem);
+  line-height: 0.95;
+}
+
+.text-breathing {
+  animation: textBreathe 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes textBreathe {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFCE1;
+}
+::-webkit-scrollbar-thumb {
+  background: #0B1849;
+  border-radius: 2px;
+}
