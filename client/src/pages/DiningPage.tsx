@@ -17,9 +17,6 @@ export const DiningPage: React.FC = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
-  const [isStayingInRoom, setIsStayingInRoom] = useState<boolean>(true);
-  const [roomNumber, setRoomNumber] = useState('');
-  const [deliveryOption, setDeliveryOption] = useState<'ROOM_SERVICE' | 'RECEPTION_PICKUP'>('ROOM_SERVICE');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [placingOrder, setPlacingOrder] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'RAZORPAY' | 'CASH'>('RAZORPAY');
@@ -111,18 +108,6 @@ export const DiningPage: React.FC = () => {
   const totalCartCount = cartList.reduce((sum, i) => sum + i.quantity, 0);
   const totalCartPrice = cartList.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  // Force delivery option to RECEPTION_PICKUP if guest is not staying in a room
-  const handleRoomToggle = (staying: boolean) => {
-    setIsStayingInRoom(staying);
-    if (!staying) {
-      setRoomNumber('None');
-      setDeliveryOption('RECEPTION_PICKUP');
-    } else {
-      setRoomNumber('');
-      setDeliveryOption('ROOM_SERVICE');
-    }
-  };
-
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -136,11 +121,6 @@ export const DiningPage: React.FC = () => {
       return;
     }
 
-    if (isStayingInRoom && (!roomNumber || roomNumber === 'None')) {
-      toast.error('Please enter your room number.');
-      return;
-    }
-
     setPlacingOrder(true);
 
     try {
@@ -148,8 +128,8 @@ export const DiningPage: React.FC = () => {
       const res = await createFoodOrder({
         guestName,
         guestPhone,
-        roomNumber: isStayingInRoom ? roomNumber : 'None',
-        deliveryOption: isStayingInRoom ? deliveryOption : 'RECEPTION_PICKUP',
+        roomNumber: 'Reception / Counter',
+        deliveryOption: 'RECEPTION_PICKUP',
         items: cartList,
         specialInstructions,
         paymentMethod: paymentMode,
@@ -539,59 +519,7 @@ export const DiningPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Staying in Room Toggle */}
-              <div className="p-3.5 bg-[#FFFCE1]/5 rounded-sm border border-[#FFFCE1]/10 space-y-3">
-                <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#FFDE74] block">
-                  Are you staying in a hotel room?
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleRoomToggle(true)}
-                    className={`px-4 py-2 rounded-sm text-xs font-sans font-bold uppercase transition-all cursor-pointer ${
-                      isStayingInRoom ? 'bg-[#FFFCE1] text-[#0B1849]' : 'bg-transparent text-[#FFFCE1]/60 border border-[#FFFCE1]/20'
-                    }`}
-                  >
-                    Yes (In Room)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRoomToggle(false)}
-                    className={`px-4 py-2 rounded-sm text-xs font-sans font-bold uppercase transition-all cursor-pointer ${
-                      !isStayingInRoom ? 'bg-[#FFFCE1] text-[#0B1849]' : 'bg-transparent text-[#FFFCE1]/60 border border-[#FFFCE1]/20'
-                    }`}
-                  >
-                    No (Outside / Reception)
-                  </button>
-                </div>
 
-                {isStayingInRoom && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="block text-[10px] font-sans uppercase text-[#FFFCE1]/80 font-bold mb-1">Room Number *</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 104"
-                        value={roomNumber}
-                        onChange={(e) => setRoomNumber(e.target.value)}
-                        className="w-full bg-[#0B1849] border border-[#FFFCE1]/20 rounded-sm px-3.5 py-2 text-xs font-sans text-[#FFFCE1]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-sans uppercase text-[#FFFCE1]/80 font-bold mb-1">Delivery Type</label>
-                      <select
-                        value={deliveryOption}
-                        onChange={(e) => setDeliveryOption(e.target.value as any)}
-                        className="w-full bg-[#0B1849] border border-[#FFFCE1]/20 rounded-sm px-3.5 py-2 text-xs font-sans text-[#FFFCE1]"
-                      >
-                        <option value="ROOM_SERVICE">Deliver to Room</option>
-                        <option value="RECEPTION_PICKUP">Reception Pickup</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Special Instructions */}
               <div>

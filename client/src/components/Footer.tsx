@@ -44,27 +44,51 @@ export const Footer: React.FC = () => {
           </ul>
         </div>
 
-        {/* Col 3: Location & Google Maps */}
-        <div className="bg-[#FFFCE1]/5 p-6 rounded-sm border border-[#FFFCE1]/10 space-y-3">
-          <span className="text-[10px] font-sans uppercase tracking-[0.2em] text-[#FFDE74] font-bold flex items-center gap-1.5">
-            <MapPin size={14} /> Location & Directions
-          </span>
-          <p className="text-xs font-sans text-[#FFFCE1]/90 leading-relaxed font-medium">
-            B.M. Road, Thanneeruhalla, Opp. S.D.M. Ayurvedic Hospital, Hassan, Karnataka - 573201
-          </p>
-          <div className="text-[11px] font-sans text-[#FFFCE1]/70 space-y-1 pt-1">
-            <p>📍 Landmark: Opposite SDM Ayurvedic Hospital</p>
-            <p>📞 Reception: <a href="tel:08172257001" className="text-[#FFDE74] font-semibold">081722 57001</a></p>
-            <p>✉️ Email: <a href="mailto:reservations@hotelraama.com" className="text-[#FFDE74]">reservations@hotelraama.com</a></p>
+        {/* Col 3: Location & Embedded Mini Map */}
+        <div className="bg-[#FFFCE1]/5 p-5 rounded-sm border border-[#FFFCE1]/10 space-y-3 flex flex-col justify-between">
+          <div className="space-y-2">
+            <span className="text-[10px] font-sans uppercase tracking-[0.2em] text-[#FFDE74] font-bold flex items-center gap-1.5">
+              <MapPin size={14} /> Location & Directions
+            </span>
+
+            {/* Embedded Mini Map */}
+            <div className="relative w-full h-32 rounded-sm overflow-hidden border border-[#FFFCE1]/20 shadow-inner group">
+              <iframe
+                title="Hotel Raama Mini Map"
+                src="https://maps.google.com/maps?q=Hotel%20Raama%20BM%20Road%20Hassan%20Karnataka&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0, filter: 'contrast(1.05) saturate(0.95)' }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <p className="text-xs font-sans text-[#FFFCE1]/90 leading-snug font-medium pt-1">
+              B.M. Road, Thanneeruhalla, Opp. S.D.M. Ayurvedic Hospital, Hassan, Karnataka - 573201
+            </p>
           </div>
-          <a
-            href="https://maps.google.com/?q=Hotel+Raama+Hassan"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-2.5 px-4 rounded-sm bg-[#FFFCE1] text-[#0B1849] font-sans font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[#FFDE74] transition-all duration-300 mt-3"
-          >
-            Google Maps <ArrowUpRight size={13} />
-          </a>
+
+          <div className="space-y-2 pt-2 border-t border-[#FFFCE1]/10 text-[11px] font-sans">
+            <div className="flex justify-between items-center text-[#FFFCE1]/70">
+              <span>📍 Opp. SDM Ayurvedic Hospital</span>
+            </div>
+            <div className="flex justify-between items-center text-[#FFFCE1]/80 font-medium">
+              <span>📞 <a href="tel:08172257001" className="text-[#FFDE74] font-bold hover:underline">081722 57001</a></span>
+              <span>✉️ <a href="mailto:reservations@hotelraama.com" className="text-[#FFDE74] hover:underline">Email Us</a></span>
+            </div>
+
+            <a
+              href="https://maps.google.com/?q=Hotel+Raama+Hassan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 rounded-sm bg-[#FFFCE1] text-[#0B1849] font-sans font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-[#FFDE74] transition-all duration-300 mt-2"
+            >
+              Get Directions on Google Maps <ArrowUpRight size={13} />
+            </a>
+          </div>
         </div>
 
         {/* Col 4: Stay Details & Timings */}
