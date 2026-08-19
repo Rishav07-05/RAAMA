@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { BedDouble, CalendarCheck, UtensilsCrossed, TrendingUp } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell } from 'recharts';
+import { BedDouble, CalendarCheck, UtensilsCrossed, TrendingUp, Award } from 'lucide-react';
 import { fetchDashboardMetrics } from '../../services/api';
 
 export const AdminDashboardView: React.FC = () => {
@@ -23,86 +23,186 @@ export const AdminDashboardView: React.FC = () => {
     );
   }
 
+  const categoryData = metrics?.categoryBreakdown || [];
+  const topItems = metrics?.topSellingItems || [];
+  const revenueChartData = metrics?.revenueChart || [];
+
   return (
     <div className="space-y-8 text-[#0B1849]">
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-2 shadow-md">
+        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-3 shadow-md hover:border-[#FFDE74]/40 transition-all">
           <div className="flex justify-between items-center text-[#FFFCE1]/70 text-xs font-sans font-bold uppercase tracking-wider">
             <span>Occupancy Rate</span>
             <BedDouble size={18} className="text-[#FFDE74]" />
           </div>
-          <div className="text-3xl font-serif font-bold text-[#FFFCE1]">{metrics?.occupancyRate}%</div>
+          <div className="text-3xl font-serif font-bold text-[#FFFCE1]">{metrics?.occupancyRate || 0}%</div>
           <p className="text-[10px] font-sans text-[#FFFCE1]/60">
-            {metrics?.occupiedRooms + metrics?.reservedRooms} of {metrics?.totalRooms} Rooms Booked/Occupied
+            {metrics?.occupiedRooms || 0} of {metrics?.totalRooms || 0} Rooms Occupied
           </p>
         </div>
 
-        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-2 shadow-md">
+        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-3 shadow-md hover:border-[#FFDE74]/40 transition-all">
           <div className="flex justify-between items-center text-[#FFFCE1]/70 text-xs font-sans font-bold uppercase tracking-wider">
             <span>Live Kitchen Orders</span>
             <UtensilsCrossed size={18} className="text-[#FFDE74]" />
           </div>
-          <div className="text-3xl font-serif font-bold text-[#FFDE74]">{metrics?.pendingOrdersCount}</div>
+          <div className="text-3xl font-serif font-bold text-[#FFDE74]">{metrics?.pendingOrdersCount || 0}</div>
           <p className="text-[10px] font-sans text-[#FFFCE1]/60">Active orders on kitchen board</p>
         </div>
 
-        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-2 shadow-md">
+        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-3 shadow-md hover:border-[#FFDE74]/40 transition-all">
           <div className="flex justify-between items-center text-[#FFFCE1]/70 text-xs font-sans font-bold uppercase tracking-wider">
             <span>Confirmed Bookings</span>
             <CalendarCheck size={18} className="text-[#FFDE74]" />
           </div>
-          <div className="text-3xl font-serif font-bold text-[#FFFCE1]">{metrics?.totalConfirmedBookings}</div>
+          <div className="text-3xl font-serif font-bold text-[#FFFCE1]">{metrics?.totalConfirmedBookings || 0}</div>
           <p className="text-[10px] font-sans text-[#FFFCE1]/60">Active room reservations</p>
         </div>
 
-        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-2 shadow-md">
+        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-3 shadow-md hover:border-emerald-400/40 transition-all">
           <div className="flex justify-between items-center text-[#FFFCE1]/70 text-xs font-sans font-bold uppercase tracking-wider">
             <span>Combined Revenue</span>
             <TrendingUp size={18} className="text-emerald-400" />
           </div>
           <div className="text-3xl font-serif font-bold text-emerald-400">
-            ₹{metrics?.totalCombinedRevenue?.toLocaleString()}
+            ₹{(metrics?.totalCombinedRevenue || 0).toLocaleString()}
           </div>
           <p className="text-[10px] font-sans text-[#FFFCE1]/60">Rooms + Food Service Payments</p>
         </div>
       </div>
 
-      {/* Revenue Breakdown Chart */}
-      <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-4 shadow-md">
-        <div className="flex justify-between items-center border-b border-[#FFFCE1]/10 pb-4">
-          <div>
-            <h3 className="text-xl font-serif text-[#FFFCE1]">Revenue Analytics</h3>
-            <p className="text-xs font-sans text-[#FFFCE1]/60">Room bookings + Room service dining revenue</p>
+      {/* Main Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Revenue Growth Trend Chart (Spans 2 columns) */}
+        <div className="lg:col-span-2 bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-4 shadow-md">
+          <div className="flex justify-between items-center border-b border-[#FFFCE1]/10 pb-4">
+            <div>
+              <h3 className="text-xl font-serif text-[#FFFCE1]">Revenue Analytics</h3>
+              <p className="text-xs font-sans text-[#FFFCE1]/60">Monthly room bookings & culinary dining performance</p>
+            </div>
+          </div>
+
+          <div className="h-72 w-full pt-4 font-sans text-xs">
+            {revenueChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueChartData}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FFDE74" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#FFDE74" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,252,225,0.1)" />
+                  <XAxis dataKey="month" stroke="#FFFCE1" />
+                  <YAxis stroke="#FFFCE1" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0B1849', borderColor: '#FFDE74', borderRadius: '4px', color: '#FFFCE1' }}
+                    formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Total Revenue']}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="#FFDE74" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-[#FFFCE1]/50 text-xs font-sans">
+                No revenue recorded yet. Placed food orders & bookings will automatically populate real-time analytics.
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="h-72 w-full pt-4 font-sans text-xs">
-          {metrics?.revenueChart && metrics.revenueChart.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={metrics.revenueChart}>
-                <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FFDE74" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#FFDE74" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,252,225,0.1)" />
-                <XAxis dataKey="month" stroke="#FFFCE1" />
-                <YAxis stroke="#FFFCE1" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0B1849', borderColor: '#FFDE74', borderRadius: '4px', color: '#FFFCE1' }}
-                  formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#FFDE74" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-[#FFFCE1]/50 text-xs font-sans">
-              No revenue data points recorded yet. Real bookings will generate chart trends here.
+        {/* Category Breakdown (1 column) */}
+        <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-4 shadow-md">
+          <div className="border-b border-[#FFFCE1]/10 pb-4">
+            <h3 className="text-xl font-serif text-[#FFFCE1]">Revenue Distribution</h3>
+            <p className="text-xs font-sans text-[#FFFCE1]/60">Sales breakdown by category</p>
+          </div>
+
+          <div className="h-56 w-full pt-2">
+            {categoryData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,252,225,0.1)" />
+                  <XAxis type="number" stroke="#FFFCE1" />
+                  <YAxis type="category" dataKey="name" stroke="#FFFCE1" hide />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0B1849', borderColor: '#FFDE74', borderRadius: '4px', color: '#FFFCE1' }}
+                    formatter={(val: any) => [`₹${val.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {categoryData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color || '#FFDE74'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-[#FFFCE1]/50 text-xs font-sans">
+                No category sales recorded yet.
+              </div>
+            )}
+          </div>
+
+          {categoryData.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-[#FFFCE1]/10">
+              {categoryData.map((cat: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-center text-xs font-sans">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                    <span className="text-[#FFFCE1]/80">{cat.name}</span>
+                  </div>
+                  <span className="font-bold text-[#FFFCE1]">₹{cat.value.toLocaleString()}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Top Performing Menu Items Section */}
+      <div className="bg-[#0B1849] text-[#FFFCE1] p-6 rounded-sm border border-[#FFFCE1]/15 space-y-4 shadow-md font-sans">
+        <div className="flex justify-between items-center border-b border-[#FFFCE1]/10 pb-4">
+          <div className="flex items-center gap-2">
+            <Award size={20} className="text-[#FFDE74]" />
+            <div>
+              <h3 className="text-xl font-serif text-[#FFFCE1]">Top Ordered Menu Items</h3>
+              <p className="text-xs text-[#FFFCE1]/60">Most popular menu items ordered in Swaad & Liquid Lounge</p>
+            </div>
+          </div>
+        </div>
+
+        {topItems.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#FFFCE1]/10 text-[#FFDE74] uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4">Item Name</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4 text-center">Orders Count</th>
+                  <th className="py-3 px-4 text-right">Total Revenue</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#FFFCE1]/5">
+                {topItems.map((item: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-[#FFFCE1]/5 transition-all">
+                    <td className="py-3 px-4 font-bold text-white">{item.name}</td>
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-0.5 rounded-sm bg-[#FFFCE1]/10 text-[#FFFCE1]/80 text-[10px]">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-[#FFDE74]">{item.ordersCount}</td>
+                    <td className="py-3 px-4 text-right font-bold text-emerald-400">₹{item.revenue.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-[#FFFCE1]/50 text-xs font-sans">
+            No item sales data recorded yet.
+          </div>
+        )}
       </div>
     </div>
   );

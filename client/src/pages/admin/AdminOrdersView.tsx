@@ -9,7 +9,16 @@ const getSocketUrl = () => {
   if (envUrl) {
     return envUrl.replace(/\/api\/?$/, '');
   }
-  return window.location.origin.includes('5173') ? 'http://localhost:5000' : window.location.origin;
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  return `http://${hostname}:5000`;
+};
+
+const formatRoomNumber = (room?: string) => {
+  if (!room || room.toLowerCase() === 'none' || room.toLowerCase().includes('reception') || room.toLowerCase() === 'qr order') {
+    return 'Reception Pickup';
+  }
+  const clean = room.replace(/^(Room\s*#?|#)/i, '').trim();
+  return `Room #${clean}`;
 };
 
 export const AdminOrdersView: React.FC = () => {
@@ -45,16 +54,14 @@ export const AdminOrdersView: React.FC = () => {
   useEffect(() => {
     loadOrders();
 
-    const socket = io(getSocketUrl(), { withCredentials: true });
+    const socket = io(getSocketUrl(), { withCredentials: true, transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
       socket.emit('join_admin_room');
     });
 
     socket.on('new_order', (newOrder: any) => {
-      const roomStr = newOrder.roomNumber || '';
-      const isPickup = !roomStr || roomStr.toLowerCase() === 'none' || roomStr.toLowerCase().includes('reception');
-      const labelText = isPickup ? 'Reception Pickup' : `Room #${roomStr}`;
+      const labelText = formatRoomNumber(newOrder.roomNumber);
       toast.success(`NEW ORDER! ${labelText} - Order #${newOrder.orderId}`);
       if (soundEnabled) playNotificationSound();
       setOrders((prev) => [newOrder, ...prev.filter((o) => o._id !== newOrder._id)]);
@@ -64,8 +71,14 @@ export const AdminOrdersView: React.FC = () => {
       setOrders((prev) => prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)));
     });
 
+    // Background Polling Fallback (syncs every 5s for cross-network / mobile orders)
+    const pollInterval = setInterval(() => {
+      loadOrders();
+    }, 5000);
+
     return () => {
       socket.disconnect();
+      clearInterval(pollInterval);
     };
   }, [soundEnabled]);
 
@@ -176,9 +189,7 @@ export const AdminOrdersView: React.FC = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="text-xs font-bold text-[#FFDE74] uppercase tracking-wider block">
-                            {ord.roomNumber && ord.roomNumber.toLowerCase() !== 'none'
-                              ? `Room #${ord.roomNumber}`
-                              : 'Reception Pickup'}
+                            {formatRoomNumber(ord.roomNumber)}
                           </span>
                           <h4 className="text-base font-serif font-bold text-[#FFFCE1]">#{ord.orderId}</h4>
                           <div className="flex gap-1.5 mt-1">

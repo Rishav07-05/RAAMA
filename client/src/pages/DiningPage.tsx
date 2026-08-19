@@ -79,7 +79,7 @@ export const DiningPage: React.FC = () => {
 
   const addToCart = (item: any, potionSize: string = 'Standard') => {
     if (!isQrScanned) {
-      toast.error('You must scan the room QR code to place an order.');
+      toast.error('QR Scan Required: Please scan the QR code in your room or table to enable food ordering.');
       return;
     }
 
@@ -129,7 +129,7 @@ export const DiningPage: React.FC = () => {
     e.preventDefault();
 
     if (!isQrScanned) {
-      toast.error('You must scan the room QR code to place an order.');
+      toast.error('QR Scan Required: You must scan a QR code to place an order.');
       return;
     }
 
@@ -150,7 +150,7 @@ export const DiningPage: React.FC = () => {
       const res = await createFoodOrder({
         guestName,
         guestPhone,
-        roomNumber: activeRoomNumber ? `Room ${activeRoomNumber}` : 'QR Order',
+        roomNumber: activeRoomNumber || '',
         deliveryOption: 'ROOM_SERVICE',
         items: cartList,
         specialInstructions,
@@ -281,11 +281,18 @@ export const DiningPage: React.FC = () => {
           Delights from Swaad Pure Veg Restaurant, Non-Veg Specialities, or executive spirits from Liquid Lounge Bar (LLB). Order straight to your room or collect at reception.
         </p>
 
-        {!isQrScanned && (
-          <div className="bg-[#0B1849] text-[#FFFCE1] p-3.5 rounded-sm border border-[#FFDE74]/30 shadow-md text-xs font-sans flex items-center justify-center gap-2.5 max-w-xl mx-auto">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        {!isQrScanned ? (
+          <div className="bg-[#0B1849] text-[#FFFCE1] p-3.5 rounded-sm border border-[#FFDE74]/40 shadow-md text-xs font-sans flex items-center justify-center gap-2.5 max-w-xl mx-auto my-4">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
             <span>
-              <strong className="text-[#FFDE74] uppercase tracking-wider">QR Scan Required:</strong> Please scan the QR code in your room or table to enable food & beverage ordering.
+              <strong className="text-[#FFDE74] uppercase tracking-wider">QR Code Scan Required:</strong> Please scan the QR code in your room or dining table to authorize food & beverage ordering.
+            </span>
+          </div>
+        ) : (
+          <div className="bg-[#0B1849] text-[#FFFCE1] p-3 rounded-sm border border-emerald-500/40 shadow-md text-xs font-sans flex items-center justify-center gap-2.5 max-w-xl mx-auto my-4">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>
+              <strong className="text-emerald-300 uppercase tracking-wider">Verified QR Session:</strong> Authorized for Room #{activeRoomNumber || 'Verified Scan'}
             </span>
           </div>
         )}

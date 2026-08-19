@@ -7,7 +7,7 @@ export class SocketService {
   static init(httpServer: HttpServer, clientUrl: string) {
     io = new SocketIOServer(httpServer, {
       cors: {
-        origin: [clientUrl, 'http://localhost:5173', 'http://localhost:3000'],
+        origin: true,
         methods: ['GET', 'POST'],
         credentials: true,
       },

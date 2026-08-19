@@ -25,7 +25,10 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
-    origin: [CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow requests from any origin (mobile phones, local IP, domain)
+      callback(null, true);
+    },
     credentials: true,
   })
 );

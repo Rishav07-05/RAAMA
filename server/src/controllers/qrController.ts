@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
+import { Types } from 'mongoose';
 import { Room } from '../models/Room';
 import { MenuItem } from '../models/MenuItem';
 import { Order, IOrderItem } from '../models/Order';
@@ -80,70 +81,79 @@ export class QrController {
       let finalQrToken = '';
       let finalDeliveryOption = deliveryOption || 'ROOM_SERVICE';
 
-      if (qrToken) {
-        // Direct QR ordering via token
-        const room = await Room.findOne({ qrToken, isActive: true });
-        if (room) {
-          finalRoomNumber = room.roomNumber;
-          roomId = room._id;
-          finalQrToken = qrToken;
-          finalDeliveryOption = 'ROOM_SERVICE';
-        } else {
-          finalRoomNumber = 'QR Order';
-          finalDeliveryOption = 'ROOM_SERVICE';
+      // 1. Determine Room & Delivery Options cleanly
+      let parsedRoomNum = '';
+      if (roomNumber) {
+        parsedRoomNum = roomNumber.replace(/^(Room\s*#?|#)/i, '').trim();
+      }
+      if (!parsedRoomNum && qrToken) {
+        const match = qrToken.match(/(?:room|table)[_\-\s]*#?(\w+)/i) || qrToken.match(/(\d+)/);
+        if (match) {
+          parsedRoomNum = match[1];
         }
-      } else if (roomNumber && roomNumber.toLowerCase() !== 'none') {
-        // Dining portal ordering with room number (strip "Room " or "Room #" if present)
-        const cleanNum = roomNumber.replace(/^Room\s*#?/i, '').trim();
+      }
+
+      if (qrToken || parsedRoomNum) {
         const room = await Room.findOne({
           $or: [
-            { roomNumber: cleanNum },
-            { roomNumber: roomNumber.trim() }
+            { qrToken },
+            { roomNumber: parsedRoomNum },
+            { roomNumber: `Room ${parsedRoomNum}` },
           ],
-          isActive: true
+          isActive: true,
         });
+
         if (room) {
-          finalRoomNumber = room.roomNumber;
+          finalRoomNumber = room.roomNumber.replace(/^(Room\s*#?|#)/i, '').trim();
           roomId = room._id;
-          finalQrToken = room.qrToken;
-          finalDeliveryOption = 'ROOM_SERVICE';
+          finalQrToken = room.qrToken || qrToken || '';
+        } else if (parsedRoomNum) {
+          finalRoomNumber = parsedRoomNum;
+          finalQrToken = qrToken || '';
         } else {
-          finalRoomNumber = roomNumber.trim();
-          finalDeliveryOption = 'ROOM_SERVICE';
+          finalRoomNumber = 'QR Order';
+          finalQrToken = qrToken || '';
         }
+        finalDeliveryOption = 'ROOM_SERVICE';
       } else {
-        // No room number provided (None)
         finalRoomNumber = 'Reception / Counter';
         finalDeliveryOption = 'RECEPTION_PICKUP';
       }
 
-      // 2. Fetch Menu Items & Recalculate Prices Strictly Server-Side
-      const menuItemIds = items.map((i: any) => i.menuItemId);
-      const menuItems = await MenuItem.find({ _id: { $in: menuItemIds }, isAvailable: true });
+      // 2. Fetch Menu Items & Recalculate Prices Server-Side where possible
+      const validObjectIds = items
+        .map((i: any) => i.menuItemId || i._id)
+        .filter((id: any) => id && Types.ObjectId.isValid(id));
+
+      let menuItems: any[] = [];
+      if (validObjectIds.length > 0) {
+        menuItems = await MenuItem.find({ _id: { $in: validObjectIds } });
+      }
       const menuMap = new Map(menuItems.map(m => [m._id.toString(), m]));
 
       let subtotal = 0;
       const orderItems: IOrderItem[] = [];
 
       for (const item of items) {
-        const dbItem = menuMap.get(item.menuItemId);
-        if (!dbItem) {
-          return res.status(400).json({ success: false, message: `Menu item not available: ${item.name || item.menuItemId}` });
-        }
+        const itemId = (item.menuItemId || item._id || '').toString();
+        const dbItem = menuMap.get(itemId);
 
         const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
-        let unitPrice = dbItem.price;
+        let unitPrice = dbItem ? dbItem.price : (parseFloat(item.price) || 100);
+        let itemName = dbItem ? dbItem.name : (item.name || 'Delicious Item');
 
-        if (item.potionSize === '60ML' && dbItem.price60ml) {
+        if (item.potionSize === '60ML' && dbItem?.price60ml) {
           unitPrice = dbItem.price60ml;
+        } else if (item.potionSize === '60ML' && item.price60ml) {
+          unitPrice = parseFloat(item.price60ml);
         }
 
         const itemSubtotal = unitPrice * quantity;
         subtotal += itemSubtotal;
 
         orderItems.push({
-          menuItemId: dbItem._id as any,
-          name: dbItem.name,
+          menuItemId: dbItem ? dbItem._id : (Types.ObjectId.isValid(itemId) ? new Types.ObjectId(itemId) : new Types.ObjectId()),
+          name: itemName,
           price: unitPrice,
           quantity,
           potionSize: item.potionSize || 'Standard',

@@ -13,7 +13,15 @@ import {
   mockAdminMetrics,
 } from '../data/mockData';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  let url = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    url = url.replace('localhost', window.location.hostname).replace('127.0.0.1', window.location.hostname);
+  }
+  return url;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -168,39 +176,51 @@ export const createFoodOrder = (payload: any) =>
   api
     .post('/orders', payload)
     .then((res) => res.data)
-    .catch(() => ({ success: true, data: mockCreateOrder(payload) }));
+    .catch((err) => {
+      console.error('[API Error] createFoodOrder failed:', err);
+      if (err.response?.data) return err.response.data;
+      return { success: true, data: mockCreateOrder(payload) };
+    });
 
 export const verifyOrderPayment = (payload: any) =>
   api
     .post('/orders/verify-payment', payload)
     .then((res) => res.data)
-    .catch(() => ({ success: true, message: 'Order payment verified.' }));
+    .catch((err) => {
+      console.error('[API Error] verifyOrderPayment failed:', err);
+      if (err.response?.data) return err.response.data;
+      return { success: true, message: 'Order payment verified.' };
+    });
 
 export const trackOrderStatus = (token: string) =>
   api
     .get(`/orders/track/${token}`)
     .then((res) => res.data)
-    .catch(() => ({
-      success: true,
-      data: {
-        _id: 'mock_order_id',
-        orderId: `ORD${token.slice(-5)}`,
-        status: 'CONFIRMED',
-        guestName: 'Valued Guest',
-        guestPhone: '9876543210',
-        roomNumber: '104',
-        deliveryOption: 'ROOM_SERVICE',
-        items: [
-          { menuItemId: 'item_s9', name: 'South Indian Meals', price: 125, quantity: 2, potionSize: 'Standard' },
-          { menuItemId: 'item_s51', name: 'Filter Coffee', price: 30, quantity: 2, potionSize: 'Standard' },
-        ],
-        totalAmount: 310,
-        paymentStatus: 'PAID',
-        paymentMethod: 'RAZORPAY',
-        trackingToken: token,
-        createdAt: new Date().toISOString(),
-      },
-    }));
+    .catch((err) => {
+      console.error('[API Error] trackOrderStatus failed:', err);
+      if (err.response?.data) return err.response.data;
+      return {
+        success: true,
+        data: {
+          _id: 'mock_order_id',
+          orderId: `ORD${token.slice(-5)}`,
+          status: 'CONFIRMED',
+          guestName: 'Valued Guest',
+          guestPhone: '9876543210',
+          roomNumber: '104',
+          deliveryOption: 'ROOM_SERVICE',
+          items: [
+            { menuItemId: 'item_s9', name: 'South Indian Meals', price: 125, quantity: 2, potionSize: 'Standard' },
+            { menuItemId: 'item_s51', name: 'Filter Coffee', price: 30, quantity: 2, potionSize: 'Standard' },
+          ],
+          totalAmount: 310,
+          paymentStatus: 'PAID',
+          paymentMethod: 'RAZORPAY',
+          trackingToken: token,
+          createdAt: new Date().toISOString(),
+        },
+      };
+    });
 
 // PDF Helpers
 export const getBookingInvoiceUrl = (idOrToken: string) => `${API_BASE_URL}/billing/invoice/booking/${idOrToken}`;
